@@ -23,39 +23,81 @@ class Tetris : public AppBase<Tetris>
 
     void Update()
     {
-        ImDrawList* draw = ImGui::GetBackgroundDrawList();
-        for (int row = 2; row < board.size(); ++row)
+        ImGuiIO& io      = ImGui::GetIO();
+        float delta_time = io.DeltaTime;
+
+        if (!gameOver)
         {
-            for (int col = 0; col < board[0].size(); ++col)
+            ImDrawList* draw = ImGui::GetBackgroundDrawList();
+            for (int row = 2; row < board.size(); ++row)
             {
-                ImVec2 top_left(col * CELL_SIZE, row * CELL_SIZE);
-                ImVec2 bottom_right((col + 1) * CELL_SIZE, (row + 1) * CELL_SIZE);
-
-                draw->AddRect(top_left, bottom_right, ImGui::GetColorU32(ImGuiCol_Text));
-
-                if (GetCell(row, col).filled == true)
+                for (int col = 0; col < board[0].size(); ++col)
                 {
-                    draw->AddRectFilled(top_left, bottom_right, GetCell(row, col).color);
+                    ImVec2 top_left(col * CELL_SIZE, row * CELL_SIZE);
+                    ImVec2 bottom_right((col + 1) * CELL_SIZE, (row + 1) * CELL_SIZE);
+
+                    draw->AddRect(top_left, bottom_right, ImGui::GetColorU32(ImGuiCol_Text));
+
+                    if (GetCell(row, col).filled == true)
+                    {
+                        draw->AddText(ImGui::GetFont(), ImGui::GetFontSize() + 20, top_left, GetCell(row, col).color,
+                                      new char(GetCell(row, col).character));
+                    }
                 }
             }
-        }
 
-        if (needsNewBlock)
-        {
-            Tetromino newPiece;
-            curPiece = newPiece;
-            DrawPiece(curPiece, draw);
-            needsNewBlock = false;
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-        else
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            needsNewBlock |= !curPiece.MoveDownAndCheck(board);
-            DrawPiece(curPiece, draw);
             if (needsNewBlock)
             {
-                AddPieceToBoard(curPiece);
+                Tetromino newPiece;
+                curPiece = newPiece;
+                DrawPiece(curPiece, draw);
+                needsNewBlock = false;
+            }
+            else
+            {
+                if (left_move)
+                {
+                    curPiece.MoveLeft(board);
+                    left_move = false;
+                }
+
+                if (right_move)
+                {
+                    curPiece.MoveRight(board);
+                    right_move = false;
+                }
+
+                if (left_rotate)
+                {
+                    curPiece.RotateLeft(board);
+                    left_rotate = false;
+                }
+
+                if (right_rotate)
+                {
+                    curPiece.RotateRight(board);
+                    right_rotate = false;
+                }
+
+                if(down) {
+                    curPiece.Fall(board);
+                    down = false;
+                }
+
+                if (time_till_fall - delta_time < 0)
+                {
+                    time_till_fall = 1.0;
+                    needsNewBlock |= !curPiece.MoveDownAndCheck(board);
+                    if (needsNewBlock)
+                    {
+                        AddPieceToBoard(curPiece);
+                    }
+                }
+                else
+                {
+                    time_till_fall -= delta_time;
+                }
+                DrawPiece(curPiece, draw);
             }
         }
     }
@@ -68,9 +110,9 @@ class Tetris : public AppBase<Tetris>
             {
                 if (piece.GetPieceCell(i, j).filled == true)
                 {
-                    int row = piece.GetRowOnBoard(i);
-                    int col = piece.GetColOnBoard(j);
-                    board[row][col] = piece.GetPieceCell(i,j);
+                    int row         = piece.GetRowOnBoard(i);
+                    int col         = piece.GetColOnBoard(j);
+                    board[row][col] = piece.GetPieceCell(i, j);
                 }
             }
         }
@@ -82,13 +124,15 @@ class Tetris : public AppBase<Tetris>
         {
             for (int j = 0; j < 5; j++)
             {
-                if (piece.GetPieceCell(i, j).filled == true)
+                auto const cell = piece.GetPieceCell(i, j);
+                if (cell.filled == true)
                 {
                     int row = piece.GetRowOnBoard(i);
                     int col = piece.GetColOnBoard(j);
-                    ImVec2 top_left(col * CELL_SIZE, row * CELL_SIZE);
+                    ImVec2 top_left(col * CELL_SIZE + CELL_SIZE / 8, row * CELL_SIZE + CELL_SIZE / 8);
                     ImVec2 bottom_right((col + 1) * CELL_SIZE, (row + 1) * CELL_SIZE);
-                    draw->AddRectFilled(top_left, bottom_right, piece.GetPieceCell(i, j).color);
+                    draw->AddText(ImGui::GetFont(), ImGui::GetFontSize() + 20, top_left, cell.color,
+                                  new char(cell.character));
                 }
             }
         }
@@ -120,6 +164,50 @@ class Tetris : public AppBase<Tetris>
         ImGuiIO& io = ImGui::GetIO();
         if (!io.WantCaptureKeyboard)
         {
+            if (key == GLFW_KEY_A && action == GLFW_PRESS)
+            {
+                left_move = true;
+            }
+            if (key == GLFW_KEY_A && action != GLFW_PRESS)
+            {
+                left_move = false;
+            }
+
+            if (key == GLFW_KEY_D && action == GLFW_PRESS)
+            {
+                right_move = true;
+            }
+            if (key == GLFW_KEY_D && action != GLFW_PRESS)
+            {
+                right_move = false;
+            }
+
+            if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+            {
+                left_rotate = true;
+            }
+            if (key == GLFW_KEY_Q && action != GLFW_PRESS)
+            {
+                left_rotate = false;
+            }
+
+            if (key == GLFW_KEY_E && action == GLFW_PRESS)
+            {
+                right_rotate = true;
+            }
+            if (key == GLFW_KEY_E && action != GLFW_PRESS)
+            {
+                right_rotate = false;
+            }
+
+            if (key == GLFW_KEY_S && action == GLFW_PRESS)
+            {
+                down = true;
+            }
+            if (key == GLFW_KEY_S && action != GLFW_PRESS)
+            {
+                down = false;
+            }
         }
     }
 
@@ -128,5 +216,19 @@ class Tetris : public AppBase<Tetris>
     bool needsNewBlock = false;
     int canMove        = 0;
     Tetromino curPiece;
-    const int CELL_SIZE = 30;
+    bool gameOver        = false;
+    const int CELL_SIZE  = 30;
+    float time_till_fall = 1.0;
+
+    static bool left_move;
+    static bool right_move;
+    static bool left_rotate;
+    static bool right_rotate;
+    static bool down;
 };
+
+bool Tetris::left_move    = false;
+bool Tetris::right_move   = false;
+bool Tetris::left_rotate  = false;
+bool Tetris::right_rotate = false;
+bool Tetris::down         = false;

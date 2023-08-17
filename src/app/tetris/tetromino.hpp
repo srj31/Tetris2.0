@@ -90,8 +90,8 @@ class Tetromino
             canFall &= MoveDownAndCheck(board);
         }
     }
-    int row_offset = 0;
-    int col_offset = 0;
+    int row_offset = -1;
+    int col_offset = -1;
 
   private:
     using Shape = std::array<std::array<Cell, 5>, 5>;
