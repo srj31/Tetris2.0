@@ -1,63 +1,110 @@
+#pragma once
 #include "datatypes.hpp"
 
 class Tetromino
 {
   public:
-    Tetromino();
+    Tetromino(){};
     virtual ~Tetromino() = default;
 
     // Return the occupied spaces
     void GetGrid();
 
-    // Rotate the pieces
-    void RotateLeft() {
-        std::array<std::array<int, 5>, 5> newShape;
-        for(int i =0 ;i < 5;++i) {
-            for(int j = 0;j < 5;++j) {
-                newShape[4-j][i] = shape[i][j];
-            }
-        }
-        shape = std::move(newShape);
+    int GetRowOnBoard(int relativeRow) const
+    {
+        return row_offset + relativeRow;
     }
-    void RotateRight(){
-        std::array<std::array<int, 5>, 5> newShape;
-        for(int i =0 ;i < 5;++i) {
-            for(int j = 0;j < 5;++j) {
-                newShape[j][4-i] = shape[i][j];
+
+    int GetColOnBoard(int relativeCol) const
+    {
+        return col_offset + relativeCol;
+    }
+
+    Cell GetPieceCell(int relRow, int relCol) const
+    {
+        return shape[relRow][relCol];
+    }
+
+    // Rotate the pieces
+    void RotateLeft(Board const& board)
+    {
+        std::array<std::array<Cell, 5>, 5> newShape;
+        for (int i = 0; i < 5; ++i)
+        {
+            for (int j = 0; j < 5; ++j)
+            {
+                newShape[4 - j][i] = shape[i][j];
             }
         }
-        shape = std::move(newShape);
+        shape = newShape;
+    }
+    void RotateRight(Board const& board)
+    {
+        std::array<std::array<Cell, 5>, 5> newShape;
+        for (int i = 0; i < 5; ++i)
+        {
+            for (int j = 0; j < 5; ++j)
+            {
+                newShape[j][4 - i] = shape[i][j];
+            }
+        }
+        shape = newShape;
     }
 
     // move the pieces around if it is possible to move
-    void MoveLeft(Board& board) {
+    void MoveLeft(Board const& board)
+    {
         col_offset--;
+        if (CheckCollision(board) == true)
+        {
+            col_offset++;
+        }
     }
-    void MoveRight(Board& board) {
+    void MoveRight(Board const& board)
+    {
         col_offset++;
-    } 
+        if (CheckCollision(board) == true)
+        {
+            col_offset--;
+        }
+    }
+
+    bool MoveDownAndCheck(Board const& board)
+    {
+        row_offset++;
+        if (CheckCollision(board) == true)
+        {
+            row_offset--;
+            return false;
+        }
+
+        return true;
+    }
 
     // make the item drop down
-    void Fall();
+    void Fall(Board const& board)
+    {
+        bool canFall = true;
+        while (canFall)
+        {
+            canFall &= MoveDownAndCheck(board);
+        }
+    }
+    int row_offset = 0;
+    int col_offset = 0;
 
   private:
     using Shape = std::array<std::array<Cell, 5>, 5>;
     Shape GetRandomShape()
     {
-        return
-        {
-            {
-                {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                    {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                    {{Cell(false), Cell(true), Cell(true), Cell(true), Cell(false)}},
-                    {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                {
-                    {
-                        Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)
-                    }
-                }
-            }
-        };
+        auto colorVec = ImVec4(rand()%256 / 255.f, rand()%256 / 255.f, rand()%256 / 255.f, 0.8f);
+        auto color = ImGui::GetColorU32(colorVec);
+
+        return {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                 {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                 {{Cell(false), Cell(true, color), Cell(true, color), Cell(true, color), Cell(false)}},
+                 {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                 {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
     }
 
     bool CheckFilled(int row, int col)
@@ -70,9 +117,10 @@ class Tetromino
                     return true;
             }
         }
+        return false;
     }
 
-    bool CheckCollision(Board& board)
+    bool CheckCollision(Board const& board)
     {
         for (int row = 2; row < board.size(); ++row)
         {
@@ -83,9 +131,25 @@ class Tetromino
                     return true;
             }
         }
+
+        return CheckNotInBounds(board);
     }
-    int row_offset = 0;
-    int col_offset = 0;
+
+    bool CheckNotInBounds(Board const& board)
+    {
+        for (int i = 0; i < 5; ++i)
+        {
+            for (int j = 0; j < 5; ++j)
+            {
+                if (shape[i][j].filled)
+                {
+                    if (row_offset + i >= 22 || col_offset + j >= 10 || col_offset + j < 0)
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
 
     Rotation rotation = Rotation::One;
     Shape shape       = GetRandomShape();
