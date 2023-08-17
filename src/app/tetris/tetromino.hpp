@@ -97,12 +97,13 @@ class Tetromino
     using Shape = std::array<std::array<Cell, 5>, 5>;
     Shape GetRandomShape()
     {
-        auto colorVec = ImVec4(rand()%256 / 255.f, rand()%256 / 255.f, rand()%256 / 255.f, 0.8f);
-        auto color = ImGui::GetColorU32(colorVec);
+        auto colorVec = ImVec4(rand() % 256 / 255.f, rand() % 256 / 255.f, rand() % 256 / 255.f, 0.8f);
+        char ch       = char(rand() % 26 + 65);
+        auto color    = ImGui::GetColorU32(colorVec);
 
         return {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
                  {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                 {{Cell(false), Cell(true, color), Cell(true, color), Cell(true, color), Cell(false)}},
+                 {{Cell(false), Cell(true, color, ch), Cell(true, color, ch), Cell(true, color, ch), Cell(false)}},
                  {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
                  {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
     }

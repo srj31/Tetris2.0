@@ -92,6 +92,7 @@ class Tetris : public AppBase<Tetris>
                     {
                         AddPieceToBoard(curPiece);
                     }
+                    CheckGameOver();
                 }
                 else
                 {
@@ -136,6 +137,17 @@ class Tetris : public AppBase<Tetris>
                 }
             }
         }
+    }
+
+    void CheckGameOver() {
+       for(int row = 0; row < 2; ++row) {
+        for(int col = 0; col < board[0].size(); ++col) {
+            if(board[row][col].filled == true) {
+                gameOver = true;
+                return;
+            }
+        }
+       }
     }
 
     Cell GetCell(int row, int col)
