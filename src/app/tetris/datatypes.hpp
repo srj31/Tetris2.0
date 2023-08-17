@@ -11,10 +11,11 @@ enum class Rotation
 class Cell
 {
   public:
-    Cell(bool filled = false) : filled(filled){};
+    Cell(bool filled = false, char character = 'A') : filled(filled), character(character){};
 
+    char character = 'A';
     bool filled = false;
     ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
 };
 
-using Board = std::array<std::array<Cell, 22>, 10>;
+using Board = std::array<std::array<Cell, 10>, 22>;

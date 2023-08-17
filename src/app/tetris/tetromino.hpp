@@ -1,568 +1,92 @@
 #include "datatypes.hpp"
 
-using LocalGrid = std::array<std::array<Cell, 5>, 5>;
-
 class Tetromino
 {
   public:
-    Tetromino(){};
+    Tetromino();
     virtual ~Tetromino() = default;
 
-    // Returns all occupied cells
-    Board GetGrid(bool rotate_left = false, bool rotate_right = false)
-    {
-        Board board;
-        Rotation local_rotation = rotation;
-        if (rotate_left)
-        {
-            if (rotation == Rotation::One)
-                local_rotation = Rotation::Two;
-            else if (rotation == Rotation::Two)
-                local_rotation = Rotation::Three;
-            else if (rotation == Rotation::Three)
-                local_rotation = Rotation::Four;
-            else if (rotation == Rotation::Four)
-                local_rotation = Rotation::One;
-        }
-        if (rotate_right)
-        {
-            if (rotation == Rotation::One)
-                local_rotation = Rotation::Four;
-            else if (rotation == Rotation::Two)
-                local_rotation = Rotation::One;
-            else if (rotation == Rotation::Three)
-                local_rotation = Rotation::Two;
-            else if (rotation == Rotation::Four)
-                local_rotation = Rotation::Three;
-        }
+    // Return the occupied spaces
+    void GetGrid();
 
-        LocalGrid local_grid = GetLocalGrid(local_rotation);
-
-        for (int col = 0; col < board.size(); ++col)
-        {
-            for (int row = 0; row < board[0].size(); ++row)
-            {
-                board[col][row] = Cell(false);
+    // Rotate the pieces
+    void RotateLeft() {
+        std::array<std::array<int, 5>, 5> newShape;
+        for(int i =0 ;i < 5;++i) {
+            for(int j = 0;j < 5;++j) {
+                newShape[4-j][i] = shape[i][j];
             }
         }
-
-        for (int col = 0; col < local_grid.size(); ++col)
-        {
-            for (int row = 0; row < local_grid[0].size(); ++row)
-            {
-                if (col + piece_col >= 10 || col + piece_col < 0)
-                    continue;
-                if (row + piece_row >= 22 || row + piece_row < 0)
-                    continue;
-
-                board[col + piece_col][row + piece_row] = local_grid[col][row];
+        shape = std::move(newShape);
+    }
+    void RotateRight(){
+        std::array<std::array<int, 5>, 5> newShape;
+        for(int i =0 ;i < 5;++i) {
+            for(int j = 0;j < 5;++j) {
+                newShape[j][4-i] = shape[i][j];
             }
         }
-
-        return board;
+        shape = std::move(newShape);
     }
 
-    // Checks if rotation is possible and rotates
-    void RotateLeft(Board board)
-    {
-        if (CollisionCheck(board, 0, 0, true, false))
-            return;
-
-        if (rotation == Rotation::One)
-            rotation = Rotation::Two;
-        else if (rotation == Rotation::Two)
-            rotation = Rotation::Three;
-        else if (rotation == Rotation::Three)
-            rotation = Rotation::Four;
-        else if (rotation == Rotation::Four)
-            rotation = Rotation::One;
+    // move the pieces around if it is possible to move
+    void MoveLeft(Board& board) {
+        col_offset--;
     }
+    void MoveRight(Board& board) {
+        col_offset++;
+    } 
 
-    void RotateRight(Board board)
-    {
-        if (CollisionCheck(board, 0, 0, false, true))
-            return;
-
-        if (rotation == Rotation::One)
-            rotation = Rotation::Four;
-        else if (rotation == Rotation::Two)
-            rotation = Rotation::One;
-        else if (rotation == Rotation::Three)
-            rotation = Rotation::Two;
-        else if (rotation == Rotation::Four)
-            rotation = Rotation::Three;
-    }
-
-    // Checks if move is possible and moves
-    void MoveLeft(Board board)
-    {
-        if (CollisionCheck(board, 0, -1))
-            return;
-
-        piece_col -= 1;
-    }
-
-    void MoveRight(Board board)
-    {
-        if (CollisionCheck(board, 0, +1))
-            return;
-
-        piece_col += 1;
-    }
-
-    // Lets the piece fall one square
-    // Returns false if falling is not possible
-    bool Fall(Board board)
-    {
-        if (CollisionCheck(board, 1, 0))
-            return false;
-
-        piece_row += 1;
-        return true;
-    }
-
-    LocalGrid UpdateColor(LocalGrid local_grid, ImVec4 color)
-    {
-        for (int col = 0; col < local_grid.size(); ++col)
-        {
-            for (int row = 0; row < local_grid[0].size(); ++row)
-            {
-                if (local_grid[col][row].filled == true)
-                {
-                    local_grid[col][row].color = ImGui::GetColorU32(color);
-                }
-            }
-        }
-        return local_grid;
-    }
-
-    int piece_row = 0;
-    int piece_col = 0;
+    // make the item drop down
+    void Fall();
 
   private:
-    // Returns true if there is a collision between self and the board
-    bool CollisionCheck(Board board, int row_offset = 0, int col_offset = 0, bool rotate_left = false,
-                        bool rotate_right = false)
+    using Shape = std::array<std::array<Cell, 5>, 5>;
+    Shape GetRandomShape()
     {
-        Board self = GetGrid(rotate_left, rotate_right);
-        for (int col = 0; col < board.size(); ++col)
+        return
         {
-            for (int row = 2; row < board[0].size(); ++row)
             {
-                // Check if the fields are accessible
-                if (row + row_offset >= 22 || row + row_offset < 0)
-                    continue;
-                if (col + col_offset >= 22 || col + col_offset < 0)
-                    continue;
-
-                // Check the self board with offset against the input
-                if (self[col][row].filled)
+                {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                    {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                    {{Cell(false), Cell(true), Cell(true), Cell(true), Cell(false)}},
+                    {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
                 {
-                    if (board[col + col_offset][row + row_offset].filled)
-                        return true;
+                    {
+                        Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)
+                    }
                 }
             }
-        }
+        };
+    }
 
-        // Check if the piece is outside the board
-        Rotation local_rotation = rotation;
-        if (rotate_left)
+    bool CheckFilled(int row, int col)
+    {
+        for (int i = 0; i < 5; ++i)
         {
-            if (rotation == Rotation::One)
-                local_rotation = Rotation::Two;
-            else if (rotation == Rotation::Two)
-                local_rotation = Rotation::Three;
-            else if (rotation == Rotation::Three)
-                local_rotation = Rotation::Four;
-            else if (rotation == Rotation::Four)
-                local_rotation = Rotation::One;
-        }
-        if (rotate_right)
-        {
-            if (rotation == Rotation::One)
-                local_rotation = Rotation::Four;
-            else if (rotation == Rotation::Two)
-                local_rotation = Rotation::One;
-            else if (rotation == Rotation::Three)
-                local_rotation = Rotation::Two;
-            else if (rotation == Rotation::Four)
-                local_rotation = Rotation::Three;
-        }
-
-        LocalGrid local_grid = GetLocalGrid(local_rotation);
-        for (int col = 0; col < local_grid.size(); ++col)
-        {
-            for (int row = 0; row < local_grid[0].size(); ++row)
+            for (int j = 0; j < 5; ++j)
             {
-                if (local_grid[col][row].filled == true)
-                {
-                    if (col + piece_col + col_offset >= 10 || col + piece_col + col_offset < 0)
-                        return true;
-                    if (row + piece_row + row_offset >= 22 || row + piece_row + row_offset < 0)
-                        return true;
-                }
+                if (row_offset + i == row && col_offset + j == col && shape[i][j].filled == true)
+                    return true;
             }
         }
-
-        return false;
     }
 
-    // The local grid of the piece based on the rotation
-    virtual LocalGrid GetLocalGrid(Rotation local_rotation)
+    bool CheckCollision(Board& board)
     {
-        LocalGrid local_grid;
-        if (local_rotation == Rotation::One)
+        for (int row = 2; row < board.size(); ++row)
         {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Two)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Three)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Four)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
+            for (int col = 0; col < board[0].size(); ++col)
+            {
 
-        return UpdateColor(local_grid, ImVec4(252.f / 255.f, 224.f / 255.f, 176.f / 255.f, 1.f));
+                if (board[row][col].filled == true && CheckFilled(row, col) == true)
+                    return true;
+            }
+        }
     }
+    int row_offset = 0;
+    int col_offset = 0;
 
-    Rotation rotation = Rotation::Four;
-};
-
-class I_Tetromino : public Tetromino
-{
-  public:
-    I_Tetromino()
-    {
-        piece_row = -1;
-        piece_col = 3;
-    }
-
-    virtual LocalGrid GetLocalGrid(Rotation local_rotation)
-    {
-        LocalGrid local_grid;
-        if (local_rotation == Rotation::One)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(true), Cell(true), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Two)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Three)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(true), Cell(true), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Four)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(true), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-
-        return UpdateColor(local_grid, ImVec4(0.f / 255.f, 255.f / 255.f, 255.f / 255.f, 1.f));
-    }
-};
-
-class L_Tetromino : public Tetromino
-{
-  public:
-    L_Tetromino()
-    {
-        piece_row = -2;
-        piece_col = 3;
-    }
-
-    virtual LocalGrid GetLocalGrid(Rotation local_rotation)
-    {
-        LocalGrid local_grid;
-        if (local_rotation == Rotation::One)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(true), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Two)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Three)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Four)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-
-        return UpdateColor(local_grid, ImVec4(255.f / 255.f, 126.f / 255.f, 0.f / 255.f, 1.f));
-    }
-};
-
-class J_Tetromino : public Tetromino
-{
-  public:
-    J_Tetromino()
-    {
-        piece_row = -2;
-        piece_col = 3;
-    }
-
-    virtual LocalGrid GetLocalGrid(Rotation local_rotation)
-    {
-        LocalGrid local_grid;
-        if (local_rotation == Rotation::One)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Two)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Three)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Four)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-
-        return UpdateColor(local_grid, ImVec4(0.f / 255.f, 0.f / 255.f, 255.f / 255.f, 1.f));
-    }
-};
-
-class O_Tetromino : public Tetromino
-{
-  public:
-    O_Tetromino()
-    {
-        piece_row = -2;
-        piece_col = 4;
-    }
-
-    virtual LocalGrid GetLocalGrid(Rotation local_rotation)
-    {
-        LocalGrid local_grid;
-        local_grid = {{{{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                       {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                       {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                       {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                       {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-
-        return UpdateColor(local_grid, ImVec4(255.f / 255.f, 255.f / 255.f, 0.f / 255.f, 1.f));
-    }
-};
-
-
-class Z_Tetromino : public Tetromino
-{
-  public:
-    Z_Tetromino()
-    {
-        piece_row = -2;
-        piece_col = 3;
-    }
-
-    virtual LocalGrid GetLocalGrid(Rotation local_rotation)
-    {
-        LocalGrid local_grid;
-        if (local_rotation == Rotation::One)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Two)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Three)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Four)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(true), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-
-        return UpdateColor(local_grid, ImVec4(255.f / 255.f, 0.f / 255.f, 0.f / 255.f, 1.f));
-    }
-};
-
-class S_Tetromino : public Tetromino
-{
-  public:
-    S_Tetromino()
-    {
-        piece_row = -2;
-        piece_col = 3;
-    }
-
-    virtual LocalGrid GetLocalGrid(Rotation local_rotation)
-    {
-        LocalGrid local_grid;
-        if (local_rotation == Rotation::One)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Two)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Three)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Four)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-
-        return UpdateColor(local_grid, ImVec4(0.f / 255.f, 255.f / 255.f, 0.f / 255.f, 1.f));
-    }
-};
-
-class T_Tetromino : public Tetromino
-{
-  public:
-    T_Tetromino()
-    {
-        piece_row = -2;
-        piece_col = 3;
-    }
-
-    virtual LocalGrid GetLocalGrid(Rotation local_rotation)
-    {
-        LocalGrid local_grid;
-        if (local_rotation == Rotation::One)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Two)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Three)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(true)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-        else if (local_rotation == Rotation::Four)
-        {
-            local_grid = {{{{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(true), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(true), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
-        }
-
-        return UpdateColor(local_grid, ImVec4(126.f / 255.f, 0.f / 255.f, 126.f / 255.f, 1.f));
-    }
+    Rotation rotation = Rotation::One;
+    Shape shape       = GetRandomShape();
 };
