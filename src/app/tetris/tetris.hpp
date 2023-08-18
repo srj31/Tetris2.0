@@ -46,6 +46,9 @@ class Tetris : public AppBase<Tetris>
                     }
                 }
             }
+            ImVec2 topLeft(22* CELL_SIZE, 10 * CELL_SIZE);
+            draw->AddText(ImGui::GetFont(), ImGui::GetFontSize() + 40, topLeft, ImGui::GetColorU32(ImGuiCol_Text),
+                          std::to_string(score).c_str());
 
             if (needsNewBlock)
             {
@@ -96,6 +99,7 @@ class Tetris : public AppBase<Tetris>
                     }
                     CheckGameOver();
                     std::vector<uint32_t> rowsToBeDeleted = FindCompleteLines();
+                    CalculateScore(rowsToBeDeleted);
                     DeleteAndMoveRows(rowsToBeDeleted);
                 }
                 else
@@ -105,6 +109,12 @@ class Tetris : public AppBase<Tetris>
                 DrawPiece(curPiece, draw);
             }
         }
+    }
+
+    void CalculateScore(std::vector<uint32_t> const& rows)
+    {
+        if (rows.size() > 0)
+            score += rows.size() * 500 + 1000;
     }
 
     void DeleteAndMoveRows(std::vector<uint32_t>& rows)
@@ -282,6 +292,7 @@ class Tetris : public AppBase<Tetris>
     bool gameOver        = false;
     const int CELL_SIZE  = 30;
     float time_till_fall = 1.0;
+    long long int score  = 0;
 
     static bool left_move;
     static bool right_move;
