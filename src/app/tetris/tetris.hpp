@@ -2,6 +2,7 @@
 #include "datatypes.hpp"
 #include "tetromino.hpp"
 #include <thread>
+#include <vector>
 
 class Tetris : public AppBase<Tetris>
 {
@@ -12,9 +13,9 @@ class Tetris : public AppBase<Tetris>
     virtual void StartUp()
     {
         needsNewBlock = true;
-        for (int row = 0; row < board.size(); ++row)
+        for (size_t row = 0; row < board.size(); ++row)
         {
-            for (int col = 0; col < board[0].size(); ++col)
+            for (size_t col = 0; col < board[0].size(); ++col)
             {
                 board[row][col] = Cell();
             }
@@ -29,9 +30,9 @@ class Tetris : public AppBase<Tetris>
         if (!gameOver)
         {
             ImDrawList* draw = ImGui::GetBackgroundDrawList();
-            for (int row = 2; row < board.size(); ++row)
+            for (size_t row = 2; row < board.size(); ++row)
             {
-                for (int col = 0; col < board[0].size(); ++col)
+                for (size_t col = 0; col < board[0].size(); ++col)
                 {
                     ImVec2 top_left(col * CELL_SIZE, row * CELL_SIZE);
                     ImVec2 bottom_right((col + 1) * CELL_SIZE, (row + 1) * CELL_SIZE);
@@ -79,7 +80,8 @@ class Tetris : public AppBase<Tetris>
                     right_rotate = false;
                 }
 
-                if(down) {
+                if (down)
+                {
                     curPiece.Fall(board);
                     down = false;
                 }
@@ -93,6 +95,8 @@ class Tetris : public AppBase<Tetris>
                         AddPieceToBoard(curPiece);
                     }
                     CheckGameOver();
+                    std::vector<uint32_t> rowsToBeDeleted = FindCompleteLines();
+                    DeleteAndMoveRows(rowsToBeDeleted);
                 }
                 else
                 {
@@ -100,6 +104,33 @@ class Tetris : public AppBase<Tetris>
                 }
                 DrawPiece(curPiece, draw);
             }
+        }
+    }
+
+    void DeleteAndMoveRows(std::vector<uint32_t>& rows)
+    {
+        int curRow = board.size() - 1;
+        for (size_t row = board.size() - 1; row >= 2; --row)
+        {
+
+            if (!rows.empty() && row == rows.back())
+            {
+                rows.pop_back();
+                continue;
+            }
+            for (size_t col = 0; col < board[0].size(); ++col)
+            {
+                board[curRow][col] = board[row][col];
+            }
+            curRow--;
+        }
+        while (curRow >= 2)
+        {
+            for (size_t col = 0; col < board[0].size(); ++col)
+            {
+                board[curRow][col] = Cell(false);
+            }
+            curRow--;
         }
     }
 
@@ -139,15 +170,35 @@ class Tetris : public AppBase<Tetris>
         }
     }
 
-    void CheckGameOver() {
-       for(int row = 0; row < 2; ++row) {
-        for(int col = 0; col < board[0].size(); ++col) {
-            if(board[row][col].filled == true) {
-                gameOver = true;
-                return;
+    std::vector<uint32_t> FindCompleteLines()
+    {
+        std::vector<uint32_t> res;
+        for (size_t row = 2; row < board.size(); ++row)
+        {
+            bool isComplete = true;
+            for (size_t col = 0; col < board[0].size(); ++col)
+            {
+                isComplete &= board[row][col].filled;
+            }
+            if (isComplete)
+                res.push_back(row);
+        }
+        return res;
+    }
+
+    void CheckGameOver()
+    {
+        for (size_t row = 0; row < 2; ++row)
+        {
+            for (size_t col = 0; col < board[0].size(); ++col)
+            {
+                if (board[row][col].filled == true)
+                {
+                    gameOver = true;
+                    return;
+                }
             }
         }
-       }
     }
 
     Cell GetCell(int row, int col)

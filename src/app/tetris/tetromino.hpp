@@ -123,9 +123,9 @@ class Tetromino
 
     bool CheckCollision(Board const& board)
     {
-        for (int row = 2; row < board.size(); ++row)
+        for (size_t row = 2; row < board.size(); ++row)
         {
-            for (int col = 0; col < board[0].size(); ++col)
+            for (size_t col = 0; col < board[0].size(); ++col)
             {
 
                 if (board[row][col].filled == true && CheckFilled(row, col) == true)
