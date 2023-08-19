@@ -1,5 +1,6 @@
 #pragma once
 #include "datatypes.hpp"
+#include <random>
 
 class Tetromino
 {
@@ -107,15 +108,35 @@ class Tetromino
     using Shape = std::array<std::array<Cell, 5>, 5>;
     Shape GetRandomShape()
     {
-        auto colorVec = ImVec4(rand() % 256 / 255.f, rand() % 256 / 255.f, rand() % 256 / 255.f, 0.8f);
-        char ch       = char(rand() % 26 + 65);
-        auto color    = ImGui::GetColorU32(colorVec);
+        auto color_vec = ImVec4(rand() % 256 / 255.f, rand() % 256 / 255.f, rand() % 256 / 255.f, 0.8f);
+        char ch        = char(rand() % 26 + 65);
+        auto color     = ImGui::GetColorU32(color_vec);
+        static std::random_device randDev;
+        static std::mt19937 twister(randDev());
+        static std::uniform_int_distribution<int> dist;
 
-        return {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                 {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                 {{Cell(false), Cell(true, color, ch), Cell(true, color, ch), Cell(true, color, ch), Cell(false)}},
-                 {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
-                 {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
+        dist.param(std::uniform_int_distribution<int>::param_type(0, 3));
+        auto rand                                                             = dist(twister);
+        std::vector<std::vector<std::pair<int, int>>> possible_filled_pattern = {
+            {{2, 1}, {2, 2}, {2, 3}, {2, 4}},
+            {{2, 1}, {2, 2}, {2, 3}, {1, 2}},
+            {{2, 1}, {2, 2}, {2, 3}, {1, 3}},
+            {{2, 1}, {2, 2}, {2, 3}, {1, 1}},
+        };
+
+        Shape newShape = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
+                           {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}}}};
+
+        auto chosen_filled_pattern = possible_filled_pattern[rand];
+        for (auto const& [row, col] : chosen_filled_pattern)
+        {
+            newShape[row][col] = Cell(true, color, ch);
+        }
+
+        return newShape;
     }
 
     bool CheckFilled(int row, int col)
