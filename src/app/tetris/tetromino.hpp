@@ -28,6 +28,7 @@ class Tetromino
     // Rotate the pieces
     void RotateLeft(Board const& board)
     {
+        auto oldShape = shape;
         std::array<std::array<Cell, 5>, 5> newShape;
         for (int i = 0; i < 5; ++i)
         {
@@ -37,9 +38,14 @@ class Tetromino
             }
         }
         shape = newShape;
+        if (CheckCollision(board) == true)
+        {
+            shape = oldShape;
+        }
     }
     void RotateRight(Board const& board)
     {
+        auto oldShape = shape;
         std::array<std::array<Cell, 5>, 5> newShape;
         for (int i = 0; i < 5; ++i)
         {
@@ -49,6 +55,10 @@ class Tetromino
             }
         }
         shape = newShape;
+        if (CheckCollision(board) == true)
+        {
+            shape = oldShape;
+        }
     }
 
     // move the pieces around if it is possible to move
