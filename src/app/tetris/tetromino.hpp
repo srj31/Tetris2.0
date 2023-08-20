@@ -117,12 +117,11 @@ class Tetromino
 
         dist.param(std::uniform_int_distribution<int>::param_type(0, 3));
         auto rand                                                             = dist(twister);
-        std::vector<std::vector<std::pair<int, int>>> possible_filled_pattern = {
-            {{2, 1}, {2, 2}, {2, 3}, {2, 4}},
-            {{2, 1}, {2, 2}, {2, 3}, {1, 2}},
-            {{2, 1}, {2, 2}, {2, 3}, {1, 3}},
-            {{2, 1}, {2, 2}, {2, 3}, {1, 1}},
-        };
+        std::vector<std::vector<std::pair<int, int>>> possible_filled_pattern = {{{2, 1}, {2, 2}, {2, 3}, {2, 4}},
+                                                                                 {{2, 1}, {2, 2}, {2, 3}, {1, 2}},
+                                                                                 {{2, 1}, {2, 2}, {2, 3}, {1, 3}},
+                                                                                 {{2, 1}, {2, 2}, {2, 3}, {1, 1}},
+                                                                                 {{2, 2}}};
 
         Shape newShape = {{{{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
                            {{Cell(false), Cell(false), Cell(false), Cell(false), Cell(false)}},
