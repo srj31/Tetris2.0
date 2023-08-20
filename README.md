@@ -4,8 +4,8 @@ Recreating Tetris with ImGui but with words. Where the aim is the blocks are cle
  ### 🚧 WIP
 
  - [x] Build a clone of original tetris
- - [] Inbuilt parsing and detecting words
- - [] Improved visuals
+ - [ ] Inbuilt parsing and detecting words
+ - [ ] Improved visuals
 
 ## Technical Details
 This version of the App framework uses [GLFW](https://www.glfw.org/) and [OpenGL](https://www.opengl.org/) as backend.
